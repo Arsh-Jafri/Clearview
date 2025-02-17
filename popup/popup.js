@@ -16,6 +16,35 @@ document.addEventListener('DOMContentLoaded', async function() {
 
   // Automatically analyze the current tab
   await analyzeCurrentTab();
+
+  // Add scroll detection
+  document.addEventListener('scroll', () => {
+    const header = document.querySelector('.header');
+    if (window.scrollY > 10) {
+      header.classList.add('scrolled');
+    } else {
+      header.classList.remove('scrolled');
+    }
+  });
+
+  // Initialize theme
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  updateThemeIcon(currentTheme);
+
+  // Add theme toggle handler
+  const themeIcon = document.querySelector('.theme-icon');
+  themeIcon.addEventListener('click', () => {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    
+    // Update theme
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    // Update icon
+    updateThemeIcon(newTheme);
+  });
 });
 
 async function analyzeCurrentTab() {
@@ -66,9 +95,29 @@ async function analyzeCurrentTab() {
 }
 
 function updateArticleInfo(article, tab) {
-  // Try to get the main image from the article
-  const ogImage = document.querySelector('meta[property="og:image"]')?.content;
-  elements.articleImage.src = ogImage || '../assets/placeholder.png';
+  // Get the article image using chrome.scripting
+  chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    func: () => {
+      // Try different meta tags for image
+      const ogImage = document.querySelector('meta[property="og:image"]')?.content;
+      const twitterImage = document.querySelector('meta[name="twitter:image"]')?.content;
+      const articleImage = document.querySelector('meta[property="article:image"]')?.content;
+      
+      // Try to find the first large image in the article
+      const firstLargeImage = Array.from(document.getElementsByTagName('img'))
+        .find(img => img.width >= 300 && img.height >= 200)?.src;
+      
+      return ogImage || twitterImage || articleImage || firstLargeImage;
+    }
+  }).then(results => {
+    const imageUrl = results[0]?.result;
+    if (imageUrl) {
+      elements.articleImage.src = imageUrl;
+    } else {
+      elements.articleImage.src = '../assets/placeholder.png';
+    }
+  });
   
   // Add quotes around the title
   elements.articleTitle.textContent = `"${article.title}"`;
@@ -78,29 +127,33 @@ function updateArticleInfo(article, tab) {
   
   if (article.byline) {
     const cleanByline = article.byline.replace('By ', '').trim();
-    elements.author.innerHTML = `<span class="dot-separator">&middot;</span>${cleanByline}`;
+    elements.author.innerHTML = `<span class="dot-separator">&middot;</span><span class="author">${cleanByline}</span>`;
   } else {
-    elements.author.innerHTML = `<span class="dot-separator">&middot;</span>Unknown`;
+    elements.author.innerHTML = `<span class="dot-separator">&middot;</span><span class="author">Unknown</span>`;
   }
   
-  // Update URL display with shortened link
+  // Update URL display with copy icon and shortened link
   const fullUrl = tab.url;
   const shortenedUrl = shortenUrl(fullUrl);
+  elements.articleUrl.innerHTML = '';  // Clear any existing content
+  elements.articleUrl.className = 'article-link';  // Reset classes
   elements.articleUrl.innerHTML = `
-    <span class="url-text" title="${fullUrl}" data-url="${fullUrl}">
-      ${shortenedUrl}
-    </span>
+    <div class="url-container">
+      <img src="../assets/copy.png" alt="Copy" class="copy-icon">
+      <span class="url-text" title="${fullUrl}" data-url="${fullUrl}">${shortenedUrl}</span>
+    </div>
   `;
   
-  // Add click handler for copying URL
-  elements.articleUrl.querySelector('.url-text').addEventListener('click', function() {
-    const url = this.dataset.url;
+  // Update click handler to reference the correct elements
+  elements.articleUrl.querySelector('.copy-icon').addEventListener('click', function() {
+    const url = this.parentElement.querySelector('.url-text').dataset.url;
     navigator.clipboard.writeText(url).then(() => {
       // Optional: Show a small "Copied!" tooltip
-      const originalText = this.textContent;
-      this.textContent = 'Copied!';
+      const urlText = this.parentElement.querySelector('.url-text');
+      const originalText = urlText.textContent;
+      urlText.textContent = 'Copied!';
       setTimeout(() => {
-        this.textContent = originalText;
+        urlText.textContent = originalText;
       }, 1000);
     });
   });
@@ -110,27 +163,17 @@ function updateArticleInfo(article, tab) {
 function shortenUrl(url) {
   try {
     const urlObj = new URL(url);
-    let path = urlObj.pathname;
+    let fullPath = urlObj.hostname + urlObj.pathname;
     
     // Remove trailing slash if present
-    path = path.replace(/\/$/, '');
+    fullPath = fullPath.replace(/\/$/, '');
     
-    // Get the last part of the path
-    const pathParts = path.split('/');
-    const lastPart = pathParts[pathParts.length - 1];
-    
-    // Construct shortened URL
-    let shortened = urlObj.hostname;
-    if (lastPart && lastPart !== '') {
-      shortened += '/.../' + lastPart;
+    // If the URL is too long, truncate it with ellipsis at the end
+    if (fullPath.length > 50) {
+      return fullPath.substring(0, 47) + '...';
     }
     
-    // If still too long, truncate with ellipsis
-    if (shortened.length > 50) {
-      shortened = shortened.substring(0, 47) + '...';
-    }
-    
-    return shortened;
+    return fullPath;
   } catch (e) {
     // Fallback if URL parsing fails
     return url.substring(0, 47) + '...';
@@ -138,8 +181,29 @@ function shortenUrl(url) {
 }
 
 function updateBiasAnalysis(bias) {
+  // First update the header HTML to include the icon with tooltip
+  const cardHeader = document.querySelector('.analysis-card .card-header');
+  cardHeader.innerHTML = `
+    <h2>Article Bias Rating</h2>
+    <div class="tooltip-container">
+      <img src="../../assets/info.png" alt="Info" class="info-icon">
+      <div class="tooltip">
+        This score indicates the article's political bias on a scale from -100 (very liberal) to +100 (very conservative). 
+        The analysis is based on language patterns, tone, and content.
+      </div>
+    </div>
+  `;
+
   // Update confidence badge
   const confidence = Math.round(bias.confidence * 100);
+  let confidenceClass = 'low';
+  if (confidence >= 61) {
+    confidenceClass = 'high';
+  } else if (confidence >= 30) {
+    confidenceClass = 'medium';
+  }
+  
+  elements.confidenceScore.className = `confidence-badge ${confidenceClass}`;
   elements.confidenceScore.textContent = `${confidence}% Confidence`;
 
   // Update score display and position
@@ -156,18 +220,117 @@ function updateBiasAnalysis(bias) {
 }
 
 function updateFlaggedSections(sections) {
+  // First update the header HTML with tooltip
+  const cardHeader = document.querySelector('.flagged-card .card-header');
+  cardHeader.innerHTML = `
+    <h2>Flagged Sections</h2>
+    <div class="tooltip-container">
+      <img src="../../assets/info.png" alt="Info" class="info-icon">
+      <div class="tooltip">
+        These sections contain politically charged language or show significant bias. 
+        Click on any section to view it in the original article.
+      </div>
+    </div>
+  `;
+
   if (!sections || sections.length === 0) {
     elements.flaggedSections.innerHTML = '<p>No politically charged sections found</p>';
     return;
   }
 
-  elements.flaggedSections.innerHTML = sections.map(section => `
-    <div class="flagged-section">
-      <p>${section.text}</p>
-      <div class="flagged-section-score">
-        Bias intensity: ${Math.abs(section.score).toFixed(1)}
-        ${section.score > 0 ? '(Conservative)' : '(Liberal)'}
+  elements.flaggedSections.innerHTML = sections.map((section, index) => {
+    const intensity = Math.abs(section.score);
+    const intensityClass = intensity > 75 ? 'high' : 'moderate';
+    
+    // Truncate text at word boundary
+    let truncatedText = section.text;
+    if (section.text.length > 150) {
+      // Find the last space before 150 characters
+      const lastSpace = section.text.substring(0, 150).lastIndexOf(' ');
+      truncatedText = section.text.substring(0, lastSpace) + '...';
+    }
+    
+    return `
+      <div class="flagged-section ${intensityClass}" data-section-index="${index}">
+        <p>"${truncatedText}"</p>
+        <div class="flagged-section-score">
+          Bias intensity: ${intensity.toFixed(1)} (${section.score > 0 ? 'Conservative' : 'Liberal'})
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
+
+  // Add click handlers
+  document.querySelectorAll('.flagged-section').forEach(section => {
+    section.addEventListener('click', async () => {
+      const index = section.dataset.sectionIndex;
+      const sectionText = sections[index].text;
+      
+      // Get the current tab
+      const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+      
+      // First focus the tab
+      await chrome.tabs.update(tab.id, {active: true});
+      
+      // Then execute the scroll script
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: (searchText) => {
+          // Clean the search text to match text nodes more reliably
+          const cleanText = searchText.trim().substring(0, 50); // Use start of text for matching
+          
+          const walker = document.createTreeWalker(
+            document.body,
+            NodeFilter.SHOW_TEXT,
+            null,
+            false
+          );
+
+          let node;
+          while (node = walker.nextNode()) {
+            if (node.textContent.includes(cleanText)) {
+              // Get the closest block-level parent
+              let element = node.parentElement;
+              while (element && 
+                     window.getComputedStyle(element).display === 'inline') {
+                element = element.parentElement;
+              }
+              
+              // Scroll the element into view
+              element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              
+              // Highlight effect
+              const originalBackground = element.style.backgroundColor;
+              const originalTransition = element.style.transition;
+              element.style.transition = 'background-color 0.3s ease';
+              element.style.backgroundColor = '#FFF9E7';
+              
+              setTimeout(() => {
+                element.style.backgroundColor = originalBackground;
+                element.style.transition = originalTransition;
+              }, 2000);
+              
+              break;
+            }
+          }
+        },
+        args: [sectionText]
+      });
+      
+      // Close the popup
+      window.close();
+    });
+  });
+}
+
+function updateThemeIcon(theme) {
+  const themeIcon = document.querySelector('.theme-icon');
+  const logo = document.querySelector('.logo');
+  
+  // Update theme icon
+  themeIcon.src = theme === 'light' ? '../assets/moon.png' : '../assets/sun.png';
+  themeIcon.alt = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+  
+  // Update logo
+  logo.src = theme === 'light' ? logo.dataset.lightSrc : logo.dataset.darkSrc;
 }
