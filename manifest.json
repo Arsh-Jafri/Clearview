@@ -37,8 +37,5 @@
       "images/logo.png"
     ],
     "matches": ["<all_urls>"]
-  }],
-  "background": {
-    "service_worker": "background/background.js"
-  }
+  }]
 } 

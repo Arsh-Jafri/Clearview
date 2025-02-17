@@ -176,7 +176,7 @@ function updateArticleInfo(article, tab) {
 
     // Get publisher width for better space calculation
     const publisherWidth = elements.publisher.offsetWidth;
-    const maxWidth = 200; // Reduced max width for author section
+    const maxWidth = 240; // Decreased to prevent line wrapping
     let currentWidth = 20; // Width of dot separator
     let displayAuthors = [];
     
