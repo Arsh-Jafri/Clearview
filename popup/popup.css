@@ -81,7 +81,7 @@ body::-webkit-scrollbar {
   opacity: 1;
 }
 
-.container {
+.content {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -803,4 +803,75 @@ html {
 body.loaded #loading-overlay {
   opacity: 0;
   pointer-events: none;
+}
+
+/* Update text color for the "no sections found" message in dark mode */
+[data-theme="dark"] .flagged-sections p {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] #flagged-sections p {
+  color: var(--text-primary);
+}
+
+/* Ensure all text in flagged sections card is white in dark mode */
+[data-theme="dark"] .flagged-card p {
+  color: var(--text-primary);
+}
+
+.error-state {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 32px 24px;
+  gap: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  margin: 16px;
+  margin-top: 0;
+}
+
+.error-icon {
+  width: 48px;
+  height: 48px;
+  opacity: 0.8;
+}
+
+[data-theme="dark"] .error-icon {
+  filter: invert(1);
+}
+
+.error-state h2 {
+  color: var(--text-primary);
+  margin: 0;
+  font-size: 23px;
+  font-weight: 700;
+}
+
+.error-state p {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Show error and hide content when not an article */
+body.not-article .error-state {
+  display: flex;
+}
+
+body.not-article .content {
+  display: none;
+}
+
+/* Keep header visible */
+body.not-article .header {
+  display: flex;
+}
+
+/* Remove any old container styles */
+.container {
+  display: none;
 } 

@@ -51,6 +51,7 @@ async function analyzeCurrentTab() {
   try {
     // Show loading state
     document.body.classList.remove('loaded');
+    document.body.classList.remove('not-article');
 
     // Get the active tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -82,6 +83,13 @@ async function analyzeCurrentTab() {
       throw new Error(result?.error || 'Failed to extract article');
     }
 
+    // Check if the content appears to be an article
+    if (!isArticle(result.article)) {
+      document.body.classList.add('not-article');
+      document.body.classList.add('loaded');
+      return;
+    }
+
     // Update UI with article info
     await updateArticleInfo(result.article, tab);
 
@@ -96,9 +104,30 @@ async function analyzeCurrentTab() {
 
   } catch (error) {
     console.error('Analysis error:', error);
-    // Hide loading state even on error
+    document.body.classList.add('not-article');
     document.body.classList.add('loaded');
   }
+}
+
+function isArticle(article) {
+  // Check for minimum content length (e.g., 300 characters)
+  if (!article.content || article.content.length < 300) {
+    return false;
+  }
+
+  // Check for required article properties
+  if (!article.title || !article.siteName) {
+    return false;
+  }
+
+  // Check for common article indicators
+  const hasArticleStructure = (
+    article.content.includes('<p>') || 
+    article.content.includes('<article') ||
+    article.byline
+  );
+
+  return hasArticleStructure;
 }
 
 function updateArticleInfo(article, tab) {
