@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Clearview: News Bias Analyzer",
   "version": "1.0.0",
-  "description": "Clearview analyzes political bias in news articles, helping you identify left- or right-leaning content with AI-powered sentiment analysis.",
+  "description": "Clearview detects political bias in news, helping you identify left- or right-leaning content with AI-powered sentiment analysis.",
   "permissions": [
     "activeTab",
     "scripting",
