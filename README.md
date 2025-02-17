@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo_white.png" alt="Clearview Logo" width="400"/>
+  <img src="assets/Logo_white.png" alt="Clearview Logo" width="400"/>
 </p>
 
 # Clearview - News and Article Bias Analyzer
