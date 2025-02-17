@@ -158,12 +158,63 @@ function updateArticleInfo(article, tab) {
   // Add quotes around the title
   elements.articleTitle.textContent = `"${article.title}"`;
   
-  // Update publisher and author with proper formatting
+  // Update publisher
   elements.publisher.innerHTML = `<span class="publisher">${article.siteName}</span>`;
   
   if (article.byline) {
-    const cleanByline = article.byline.replace('By ', '').trim();
-    elements.author.innerHTML = `<span class="dot-separator">&middot;</span><span class="author">${cleanByline}</span>`;
+    const cleanByline = article.byline.replace(/^By |by /, '').trim();
+    const authors = cleanByline.split(/,|\band\b/).map(author => author.trim());
+    
+    // Create a temporary div to measure text width
+    const measureDiv = document.createElement('div');
+    measureDiv.style.visibility = 'hidden';
+    measureDiv.style.position = 'absolute';
+    measureDiv.style.whiteSpace = 'nowrap';
+    measureDiv.style.fontFamily = 'Figtree, sans-serif';
+    measureDiv.style.fontSize = '14px';
+    document.body.appendChild(measureDiv);
+
+    // Get publisher width for better space calculation
+    const publisherWidth = elements.publisher.offsetWidth;
+    const maxWidth = 200; // Reduced max width for author section
+    let currentWidth = 20; // Width of dot separator
+    let displayAuthors = [];
+    
+    // Try adding authors until we exceed width
+    for (let i = 0; i < authors.length; i++) {
+      const author = authors[i];
+      measureDiv.textContent = author;
+      const authorWidth = measureDiv.offsetWidth;
+      
+      // Add comma/and spacing for width calculation
+      if (i > 0) currentWidth += 4; // Space for comma or 'and'
+      
+      if (currentWidth + authorWidth > maxWidth) {
+        // If we can't fit even one author, show truncated first author
+        if (displayAuthors.length === 0) {
+          const truncatedAuthor = author.split(' ')[0] + ' ...';
+          displayAuthors.push(truncatedAuthor);
+        } else {
+          displayAuthors.push('...');
+        }
+        break;
+      }
+      
+      displayAuthors.push(author);
+      currentWidth += authorWidth;
+    }
+
+    document.body.removeChild(measureDiv);
+    
+    // Join authors with commas and 'and'
+    let authorText = displayAuthors.join(', ');
+    if (authorText.includes('...')) {
+      authorText = authorText.replace(', ...', ' ...');
+    } else if (displayAuthors.length > 1) {
+      authorText = authorText.replace(/, ([^,]+)$/, ' and $1');
+    }
+
+    elements.author.innerHTML = `<span class="dot-separator">&middot;</span><span class="author">${authorText}</span>`;
   } else {
     elements.author.innerHTML = `<span class="dot-separator">&middot;</span><span class="author">Unknown</span>`;
   }
