@@ -3,6 +3,11 @@ let elements = {};
 
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async function() {
+  // Initialize theme first, before any content loads
+  const currentTheme = localStorage.getItem('theme') || 'light';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  updateThemeIcon(currentTheme);
+
   elements = {
     articleImage: document.getElementById('article-image'),
     articleTitle: document.getElementById('article-title'),
@@ -27,11 +32,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     }
   });
 
-  // Initialize theme
-  const currentTheme = localStorage.getItem('theme') || 'light';
-  document.documentElement.setAttribute('data-theme', currentTheme);
-  updateThemeIcon(currentTheme);
-
   // Add theme toggle handler
   const themeIcon = document.querySelector('.theme-icon');
   themeIcon.addEventListener('click', () => {
@@ -49,6 +49,9 @@ document.addEventListener('DOMContentLoaded', async function() {
 
 async function analyzeCurrentTab() {
   try {
+    // Show loading state
+    document.body.classList.remove('loaded');
+
     // Get the active tab
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) {
@@ -80,7 +83,7 @@ async function analyzeCurrentTab() {
     }
 
     // Update UI with article info
-    updateArticleInfo(result.article, tab);
+    await updateArticleInfo(result.article, tab);
 
     // Update bias analysis
     updateBiasAnalysis(result.article.analysis.bias);
@@ -88,9 +91,13 @@ async function analyzeCurrentTab() {
     // Update flagged sections
     updateFlaggedSections(result.article.analysis.bias.flaggedSections);
 
+    // Hide loading state
+    document.body.classList.add('loaded');
+
   } catch (error) {
     console.error('Analysis error:', error);
-    // Could add error UI here
+    // Hide loading state even on error
+    document.body.classList.add('loaded');
   }
 }
 
@@ -140,23 +147,27 @@ function updateArticleInfo(article, tab) {
   elements.articleUrl.innerHTML = `
     <div class="url-container">
       <img src="../assets/copy.png" alt="Copy" class="copy-icon">
-      <span class="url-text" title="${fullUrl}" data-url="${fullUrl}">${shortenedUrl}</span>
+      <span class="url-text" title="${fullUrl}" data-url="${fullUrl}" style="cursor: pointer">${shortenedUrl}</span>
     </div>
   `;
   
-  // Update click handler to reference the correct elements
-  elements.articleUrl.querySelector('.copy-icon').addEventListener('click', function() {
-    const url = this.parentElement.querySelector('.url-text').dataset.url;
+  // Add click handlers for both the icon and the text
+  const copyIcon = elements.articleUrl.querySelector('.copy-icon');
+  const urlText = elements.articleUrl.querySelector('.url-text');
+
+  function copyUrl() {
+    const url = urlText.dataset.url;
     navigator.clipboard.writeText(url).then(() => {
-      // Optional: Show a small "Copied!" tooltip
-      const urlText = this.parentElement.querySelector('.url-text');
       const originalText = urlText.textContent;
       urlText.textContent = 'Copied!';
       setTimeout(() => {
         urlText.textContent = originalText;
       }, 1000);
     });
-  });
+  }
+
+  copyIcon.addEventListener('click', copyUrl);
+  urlText.addEventListener('click', copyUrl);
 }
 
 // Add this helper function to shorten URLs
@@ -210,10 +221,18 @@ function updateBiasAnalysis(bias) {
   const score = Math.round(bias.score);
   const position = ((bias.score + 100) / 2);
   
-  // Update score circle
+  // Update score circle with animation
   const scoreCircle = document.getElementById('bias-score');
   scoreCircle.textContent = score;
-  scoreCircle.style.left = `${position}%`;
+  
+  // Start at center
+  scoreCircle.style.left = '50%';
+  
+  // Trigger animation after a small delay
+  setTimeout(() => {
+    scoreCircle.classList.add('animate');
+    scoreCircle.style.left = `${position}%`;
+  }, 100);
   
   // Update indicator dot
   elements.biasIndicator.style.left = `${position}%`;
