@@ -2,14 +2,56 @@
 <html>
 <head>
   <title>Clearview</title>
-  <link rel="stylesheet" type="text/css" href="popup.css">
+  <link rel="stylesheet" href="popup.css">
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
+  <div class="header">
+    <img src="../assets/logo.png" alt="Clearview" class="logo">
+    <img src="../assets/settings.png" alt="Settings" class="settings-icon">
+  </div>
+  
   <div class="container">
-    <h1>Clearview</h1>
-    <div id="status-message" class="status-message"></div>
-    <div id="extracted-content"></div>
-    <button id="analyze-btn">Analyze Article</button>
+    <div class="article-card">
+      <img class="article-image" id="article-image">
+      <div class="article-meta">
+        <h2 id="article-title"></h2>
+        <div class="publisher-info">
+          <span id="publisher"></span><span id="author"></span>
+        </div>
+        <div class="article-link">
+          <img src="../assets/link.png" alt="Link" class="link-icon">
+          <span id="article-url"></span>
+        </div>
+      </div>
+    </div>
+
+    <div class="analysis-card">
+      <div class="card-header">
+        <h2>Article Bias Rating</h2>
+        <img src="../assets/info.png" alt="Info" class="info-icon">
+      </div>
+      <div class="confidence-badge" id="confidence-score"></div>
+      <div class="bias-meter">
+        <div class="bias-scale">
+          <span>-100</span>
+          <span>0</span>
+          <span>100</span>
+        </div>
+        <div class="score-circle" id="bias-score">14</div>
+        <div class="bias-bar">
+          <div class="bias-indicator" id="bias-indicator"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flagged-card">
+      <div class="card-header">
+        <h2>Flagged Sections</h2>
+        <img src="../assets/info.png" alt="Info" class="info-icon">
+      </div>
+      <div id="flagged-sections"></div>
+    </div>
   </div>
   <script src="popup.js"></script>
 </body>

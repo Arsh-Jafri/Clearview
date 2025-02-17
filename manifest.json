@@ -31,7 +31,11 @@
     }
   ],
   "web_accessible_resources": [{
-    "resources": ["lib/Readability.js", "content/content.js"],
+    "resources": [
+      "lib/Readability.js",
+      "dist/content.bundle.js",
+      "images/logo.png"
+    ],
     "matches": ["<all_urls>"]
   }],
   "background": {

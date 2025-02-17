@@ -1,13 +1,233 @@
 body {
-  width: 300px;
-  padding: 10px;
-  font-family: Arial, sans-serif;
+  width: 400px;
+  margin: 0;
+  padding: 16px;
+  font-family: 'Figtree', sans-serif;
+  background-color: #FCFBFC;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.logo {
+  height: 24px;
+  width: auto;
+}
+
+.settings-icon {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
 }
 
 .container {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 16px;
+}
+
+.article-card, .analysis-card, .flagged-card {
+  background: #FFFFFF;
+  border: 1px solid #EEEEEE;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.article-image {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+
+.article-meta h2 {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 700;
+  color: #1E1E1E;
+  font-size: 16px;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.publisher-info {
+  font-family: 'Figtree', sans-serif;
+  font-size: 14px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+}
+
+.publisher {
+  font-weight: 700;
+  color: #363636;
+}
+
+.dot-separator {
+  color: #363636;
+  margin: 0 6px;
+}
+
+.author {
+  font-weight: 400;
+  color: #363636;
+}
+
+.article-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #363636;
+  max-width: 100%;
+}
+
+.url-text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.url-text:hover {
+  color: #4699FF;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.card-header h2 {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 700;
+  color: #1E1E1E;
+  font-size: 16px;
+  margin: 0;
+}
+
+.confidence-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  background: #FFF9E7;
+  border-radius: 100px;
+  font-weight: 600;
+  font-size: 14px;
+  color: #363636;
+  margin-bottom: 16px;
+}
+
+.bias-meter {
+  position: relative;
+  padding-top: 32px; /* Make room for the circle */
+}
+
+.score-circle {
+  width: 40px;
+  height: 40px;
+  background: white;
+  border: 2px solid #1E1E1E;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Figtree', sans-serif;
+  font-weight: 700;
+  font-size: 16px;
+  color: #1E1E1E;
+  transition: left 0.3s ease;
+}
+
+/* Add triangle pointer */
+.score-circle::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 8px solid #1E1E1E;
+}
+
+.score-circle::before {
+  content: '';
+  position: absolute;
+  bottom: -6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 6px solid white;
+  z-index: 1;
+}
+
+.bias-scale {
+  display: flex;
+  justify-content: space-between;
+  color: #363636;
+  font-size: 12px;
+  margin-bottom: 8px;
+}
+
+.bias-bar {
+  height: 8px;
+  background: linear-gradient(90deg, #4699FF 0%, #FF6161 100%);
+  border-radius: 100px;
+  position: relative;
+}
+
+.bias-indicator {
+  width: 12px;
+  height: 12px;
+  background: white;
+  border: 2px solid #1E1E1E;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  transition: left 0.3s ease;
+}
+
+.flagged-section {
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  background: #FFF9E7;
+  border-left: 4px solid #FF9800;
+}
+
+.flagged-section:last-child {
+  margin-bottom: 0;
+}
+
+.flagged-section p {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 500;
+  color: #363636;
+  margin: 0 0 8px 0;
+}
+
+.flagged-section-score {
+  font-family: 'Figtree', sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  color: #363636;
 }
 
 h1 {
@@ -141,4 +361,25 @@ h2 {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+.flagged-sections {
+  margin-top: 16px;
+  border-top: 1px solid #eee;
+  padding-top: 16px;
+}
+
+.flagged-section {
+  background-color: #fff3e0;
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  border-left: 4px solid #ff9800;
+}
+
+.flagged-section-score {
+  font-size: 12px;
+  color: #666;
+  margin-top: 8px;
+} 
 } 
