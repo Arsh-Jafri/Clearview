@@ -1,6 +1,29 @@
 // Store DOM elements
 let elements = {};
 
+// Add this near the top of popup.js
+const loadingStates = [
+  "Extracting article text...",
+  "Analyzing article bias...",
+  "Calculating bias score...",
+  "Identifying flagged sections...",
+  "Putting it all together..."  // Final state
+];
+
+let currentLoadingState = 0;
+let loadingInterval;
+
+function updateLoadingState() {
+  const loadingText = document.getElementById('loading-text');
+  if (loadingText) {
+    loadingText.textContent = loadingStates[currentLoadingState];
+    // Only increment if not at the final state
+    if (currentLoadingState < loadingStates.length - 1) {
+      currentLoadingState++;
+    }
+  }
+}
+
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async function() {
   // Initialize theme first, before any content loads
@@ -52,20 +75,24 @@ async function analyzeCurrentTab() {
     // Show loading state
     document.body.classList.remove('loaded');
     document.body.classList.remove('not-article');
+    
+    // Start loading state updates
+    currentLoadingState = 0;
+    loadingInterval = setInterval(updateLoadingState, 1500);
+    updateLoadingState();
 
-    // Get the active tab
+    // Get the active tab - this uses activeTab permission
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
     if (!tab) {
       throw new Error('No active tab found');
     }
 
-    // First inject Readability
+    // These use the scripting permission with activeTab
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       files: ['lib/Readability.js']
     });
 
-    // Then inject our bundled content script
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       files: ['dist/content.bundle.js']
@@ -99,10 +126,13 @@ async function analyzeCurrentTab() {
     // Update flagged sections
     updateFlaggedSections(result.article.analysis.bias.flaggedSections);
 
-    // Hide loading state
+    // When done, clear the interval and hide loading
+    clearInterval(loadingInterval);
     document.body.classList.add('loaded');
 
   } catch (error) {
+    // Clear interval on error too
+    clearInterval(loadingInterval);
     console.error('Analysis error:', error);
     document.body.classList.add('not-article');
     document.body.classList.add('loaded');
@@ -275,7 +305,7 @@ function updateBiasAnalysis(bias) {
   // First update the header HTML to include the icon with tooltip
   const cardHeader = document.querySelector('.analysis-card .card-header');
   cardHeader.innerHTML = `
-    <h2>Article Bias Rating</h2>
+    <h2>Article Bias Score</h2>
     <div class="tooltip-container">
       <img src="../../assets/info.png" alt="Info" class="info-icon">
       <div class="tooltip">

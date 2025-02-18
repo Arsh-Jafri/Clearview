@@ -7,9 +7,12 @@
 </head>
 <body>
   <div id="loading-overlay">
-    <div class="loading-icon-wrapper">
-      <img src="../assets/icon128.png" alt="Loading" class="loading-icon light-mode-icon">
-      <img src="../assets/icon128.png" alt="Loading" class="loading-icon dark-mode-icon">
+    <div class="loading-container">
+      <div class="loading-icon-wrapper">
+        <img src="../assets/icon128.png" alt="Loading" class="loading-icon light-mode-icon">
+        <img src="../assets/icon128.png" alt="Loading" class="loading-icon dark-mode-icon">
+      </div>
+      <div id="loading-text" class="loading-text"></div>
     </div>
   </div>
 
@@ -40,7 +43,7 @@
 
     <div class="analysis-card">
       <div class="card-header">
-        <h2>Article Bias Rating</h2>
+        <h2>Article Bias Score</h2>
         <img src="../assets/info.png" alt="Info" class="info-icon">
       </div>
       <div class="confidence-badge" id="confidence-score"></div>

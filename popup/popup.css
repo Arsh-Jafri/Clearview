@@ -760,13 +760,34 @@ html {
   transition: opacity 0.3s ease, background-color 0.3s ease;
 }
 
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.loading-text {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  min-height: 20px;
+  animation: fade 1.5s infinite;
+}
+
+@keyframes fade {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
 .loading-icon-wrapper {
   width: 64px;
   height: 64px;
   display: flex;
   justify-content: center;
   align-items: center;
-  animation: pulse-and-spin 1.5s infinite ease-in-out;
+  animation: pulse-and-spin 2s infinite ease-in-out;
 }
 
 .loading-icon {
@@ -791,12 +812,15 @@ html {
 @keyframes pulse-and-spin {
   0% {
     transform: scale(0.8) rotate(0deg);
+    opacity: 0.8;
   }
   50% {
     transform: scale(1.2) rotate(180deg);
+    opacity: 1;
   }
   100% {
     transform: scale(0.8) rotate(360deg);
+    opacity: 0.8;
   }
 }
 

@@ -24,8 +24,18 @@ const politicalPatterns = {
       'radical left', 'socialist agenda', 'liberal media', 'conservative values'
     ],
     criticisms: [
-      'socialist', 'radical', 'leftist', 'communist', 'marxist',
-      'antifa', 'defund', 'woke', 'cancel culture'
+      'socialist agenda', 'radical left', 'leftist policies',
+      'liberal elite', 'democrat policies', 'progressive agenda',
+      'socialist programs', 'liberal bias', 'leftist media',
+      'radical democrat', 'socialist democrat', 'marxist ideology',
+      'big government', 'tax and spend', 'welfare state',
+      'identity politics', 'cancel culture', 'political correctness',
+      'woke ideology', 'radical agenda', 'socialist policies',
+      'government overreach', 'liberal indoctrination', 'leftist propaganda'
+    ],
+    policy_references: [
+      'conservative approach', 'republican policy', 'conservative solution',
+      'right-wing perspective', 'traditional values', 'conservative principles'
     ],
     weight: 1500  // Increased from 100 to 1500
   },
@@ -43,8 +53,37 @@ const politicalPatterns = {
       'progressive values', 'democratic values', 'social justice'
     ],
     criticisms: [
-      'far-right', 'alt-right', 'white supremacy', 'insurrection',
-      'misinformation', 'conspiracy theory', 'anti-science'
+      'far-right agenda', 'conservative bias', 'republican obstruction',
+      'right-wing extremism', 'conservative propaganda', 'regressive policies',
+      'anti-science stance', 'climate denial', 'conservative media bias',
+      'conservative policies', 'conservative agenda', 'conservative approach',
+      'republican policies', 'right-wing policies', 'conservative ideology',
+      'regressive approach', 'backwards thinking', 'outdated views',
+      'anti-progress', 'science denial', 'climate inaction',
+      'conservative obstruction', 'republican obstruction', 'conservative resistance',
+      'undermined progress', 'blocked reform', 'opposed progress',
+      'conservative failure', 'republican failure', 'failed policies',
+      'corporate interests', 'special interests', 'donor class',
+      'conservative establishment', 'republican establishment',
+      'systemic inequality', 'voter suppression', 'discriminatory policies',
+      'anti-environment', 'anti-worker', 'anti-regulation',
+      'trickle-down economics', 'tax cuts for the rich', 'wealth inequality',
+      'conservative extremism', 'right-wing extremism', 'far-right ideology'
+    ],
+    policy_references: [
+      'liberal approach', 'democratic policy', 'progressive solution',
+      'left-wing perspective', 'progressive values', 'liberal principles'
+    ],
+    negative_descriptors: [
+      'regressive', 'backwards', 'outdated', 'obsolete',
+      'harmful', 'dangerous', 'extreme', 'radical',
+      'oppressive', 'discriminatory', 'unfair', 'unjust',
+      'anti-democratic', 'authoritarian', 'corrupt', 'failed'
+    ],
+    policy_criticisms: [
+      'undermined', 'blocked', 'opposed', 'prevented',
+      'obstructed', 'resisted', 'rejected', 'denied',
+      'ignored', 'dismissed', 'neglected', 'failed'
     ],
     weight: 1500  // Increased from 100 to 1500
   }
@@ -158,6 +197,29 @@ const BIAS_INDICATORS = {
   }
 };
 
+// Add this helper function after the constants
+function getWordVariations(word) {
+  const doc = nlp(word);
+  const variations = new Set();
+  
+  // Add original word
+  variations.add(word.toLowerCase());
+  
+  // Add root form
+  doc.verbs().toInfinitive().forEach(v => variations.add(v.text().toLowerCase()));
+  
+  // Add different forms
+  doc.verbs().conjugate().forEach(conj => {
+    Object.values(conj).forEach(form => variations.add(form.toLowerCase()));
+  });
+  
+  // Add singular/plural forms for nouns
+  doc.nouns().toSingular().forEach(n => variations.add(n.text().toLowerCase()));
+  doc.nouns().toPlural().forEach(n => variations.add(n.text().toLowerCase()));
+  
+  return Array.from(variations);
+}
+
 /**
  * Enhanced sentiment analysis with better context awareness
  */
@@ -165,258 +227,367 @@ function analyzeSentimentWithContext(text, politicalContent) {
   const lowerText = text.toLowerCase();
   let score = 0;
 
-  // First check for conservative narrative framing of liberals
-  if (lowerText.includes('liberal') || lowerText.includes('democrat')) {
-    // Check for negative descriptors
-    const negativeDescriptors = [
-      'unhappy', 'lonely', 'unsatisfied', 'miserable', 'depressed',
-      'angry', 'frustrated', 'unfulfilled', 'dissatisfied', 'sad'
-    ];
-
-    // Count how many negative descriptors are used
-    let negativeCount = 0;
-    negativeDescriptors.forEach(descriptor => {
-      if (lowerText.includes(descriptor)) {
-        negativeCount++;
-        score += 25; // Add to conservative score for each negative descriptor
-      }
-    });
-
-    // Check for comparative framing
-    const comparativePatterns = [
-      'more likely', 'less likely', 'compared to', 'than conservative',
-      'while conservative', 'unlike conservative'
-    ];
-
-    comparativePatterns.forEach(pattern => {
-      if (lowerText.includes(pattern)) {
-        score += 35; // Add more for comparative framing
-      }
-    });
-
-    // If we found negative descriptors, this is likely conservative criticism
-    if (negativeCount > 0) {
-      // Ensure positive score for conservative bias
-      return Math.max(-100, Math.min(100, Math.abs(score)));
+  // Comparative analysis patterns with adjusted weights
+  const comparativePatterns = {
+    conservative: {
+      target: ['liberal', 'liberals', 'democrats', 'left-wing'],
+      comparison: ['compared to', 'more likely', 'less likely', 'than', 'unlike'],
+      negative: ['unhappy', 'dissatisfied', 'angry', 'frustrated', 'miserable']
+    },
+    liberal: {
+      target: ['conservative', 'conservatives', 'republicans', 'right-wing'],
+      comparison: ['compared to', 'more likely', 'less likely', 'than', 'unlike'],
+      negative: ['regressive', 'harmful', 'damaging', 'backwards', 'outdated']
     }
+  };
+
+  // Enhanced comparison analysis with higher weights
+  function analyzeComparison(patterns) {
+    let score = 0;
+    patterns.target.forEach(target => {
+      patterns.comparison.forEach(comp => {
+        patterns.negative.forEach(neg => {
+          if (lowerText.includes(`${target}`) && 
+              lowerText.includes(`${comp}`) && 
+              lowerText.includes(`${neg}`)) {
+            score += 75; // Increased from 50 for stronger comparative bias
+          }
+        });
+      });
+    });
+    return score;
   }
 
-  // If no conservative narrative framing was found, use the existing sentiment logic
+  // Adjusted radical terms analysis
+  function analyzeRadicalTerms() {
+    const radicalTerms = ['radical', 'radicalized', 'extreme', 'extremist'];
+    let count = 0;
+    radicalTerms.forEach(term => {
+      const regex = new RegExp(term, 'gi');
+      const matches = lowerText.match(regex) || [];
+      count += matches.length;
+    });
+    return count > 1 ? 25 * count : 15; // Reduced from 40 for more moderate scoring
+  }
+
+  // Refined systematic criticism analysis
+  function analyzeSystematicCriticism() {
+    const systematicTerms = ['systematically', 'consistently', 'repeatedly', 'continuously'];
+    const negativeActions = ['undermine', 'damage', 'destroy', 'harm', 'block'];
+    
+    let score = 0;
+    systematicTerms.forEach(systematic => {
+      negativeActions.forEach(action => {
+        if (lowerText.includes(systematic) && lowerText.includes(action)) {
+          score += 35; // Reduced from 45 for more balanced scoring
+        }
+      });
+    });
+    return score;
+  }
+
+  // Apply comparative analysis with proper weighting
+  const conservativeComparison = analyzeComparison(comparativePatterns.conservative);
+  const liberalComparison = analyzeComparison(comparativePatterns.liberal);
+  
+  // Add radical terms analysis with reduced weight
+  const radicalScore = analyzeRadicalTerms();
+  
+  // Add systematic criticism analysis
+  const systematicScore = analyzeSystematicCriticism();
+
+  // Combine scores with proper polarity and balanced weights
+  if (conservativeComparison > 0) {
+    score += conservativeComparison * 1.2; // Boost conservative criticism slightly
+  }
+  if (liberalComparison > 0) {
+    score -= liberalComparison * 1.2; // Boost liberal criticism slightly
+  }
+  if (radicalScore > 0 && lowerText.includes('leftist')) {
+    score += radicalScore * 0.8; // Reduced multiplier for radical terms
+  }
+  if (systematicScore > 0 && lowerText.includes('conservative')) {
+    score -= systematicScore * 0.8; // Reduced multiplier for systematic criticism
+  }
+
+  // Get base sentiment with reduced weight
   const sentimentResult = sentiment.analyze(text);
-  score = sentimentResult.comparative * 1500;
-
-  // Apply political context adjustments
-  switch (politicalContent.bias) {
-    case 'conservative':
-      return Math.max(-100, Math.min(100, score * (score > 0 ? 3 : 1.5)));
-    case 'liberal':
-      return Math.max(-100, Math.min(100, -score * (score > 0 ? 3 : 1.5)));
-    case 'mixed':
-      return Math.max(-100, Math.min(100, score * 0.5));
-    default:
-      return 0;
+  const baseSentiment = sentimentResult.comparative * 1000; // Reduced from 1500
+  
+  // Adjust factual statement detection
+  const hasFactualPattern = lowerText.match(/(tend to|generally|typically|usually|often) (support|favor|prefer|advocate)/i);
+  if (hasFactualPattern) {
+    score *= 0.3; // Significantly reduce score for factual statements
   }
+  
+  // Weight the components with better balance
+  const finalScore = (score * 0.8) + (baseSentiment * 0.2);
+  
+  // Apply softer non-linear scaling
+  if (Math.abs(finalScore) > 35) {
+    const direction = finalScore > 0 ? 1 : -1;
+    return direction * (35 + Math.pow(Math.abs(finalScore) - 35, 1.2));
+  }
+  
+  return Math.max(-100, Math.min(100, finalScore));
 }
 
 /**
- * Enhanced political content analysis with context awareness
+ * Enhanced political content analysis with better balance
  */
-function analyzePoliticalContent(sentence, patterns) {
+function analyzePoliticalContent(text, patterns) {
   const result = {
     found: false,
     bias: 'neutral',
-    weight: 1500,
-    entities: [],
     intensity: 0,
-    context: 'neutral' // Track if criticism or support
+    entities: [],
+    context: 'neutral',
+    weight: 1500
   };
 
-  const text = sentence.text().toLowerCase();
-  const words = text.split(/\s+/);
-  const uniqueWords = new Set(words);
+  // Helper function to check patterns with balanced weights
+  const checkPatterns = (category, biasType, patternArray) => {
+    if (!Array.isArray(patternArray)) return;
 
-  // Track word frequencies
-  const wordFrequencies = {};
-  words.forEach(word => {
-    wordFrequencies[word] = (wordFrequencies[word] || 0) + 1;
-  });
-
-  // Helper function to check patterns with context
-  const checkPatterns = (category, patterns, biasType) => {
-    patterns[biasType][category].forEach(pattern => {
-      if (text.includes(pattern.toLowerCase())) {
+    patternArray.forEach(pattern => {
+      const words = pattern.toLowerCase().split(' ');
+      const textLower = text.toLowerCase();
+      
+      // Check for exact phrase match with balanced intensity
+      if (words.length > 1 && textLower.includes(pattern.toLowerCase())) {
         result.found = true;
+        result.entities.push(pattern);
         
-        // Apply diminishing returns for repeated patterns
-        const frequency = wordFrequencies[pattern.toLowerCase()] || 1;
-        const adjustedWeight = patterns[biasType].weight * (1 + Math.log(frequency)) / frequency;
-        
-        result.entities.push({ 
-          pattern, 
-          category,
-          frequency,
-          adjustedWeight 
-        });
-        
-        result.intensity += adjustedWeight;
-
-        // Determine if this is criticism or support
+        // Adjusted base intensities for better balance
+        let baseIntensity;
         if (category === 'criticisms') {
-          // If criticizing liberals, it's conservative bias
-          if (biasType === 'liberal') {
-            result.bias = 'conservative';
-            result.context = 'criticism';
-          }
-          // If criticizing conservatives, it's liberal bias
-          else if (biasType === 'conservative') {
-            result.bias = 'liberal';
-            result.context = 'criticism';
-          }
+          result.context = 'criticism';
+          result.bias = biasType;
+          baseIntensity = 2.5; // Reduced from 3.5
+        } else if (category === 'phrases') {
+          result.context = 'support';
+          result.bias = biasType;
+          baseIntensity = 1.0; // Reduced from 1.5
         } else {
-          if (result.bias === 'neutral') {
-            result.bias = biasType;
-            result.context = 'support';
-          }
+          result.context = 'support';
+          result.bias = biasType;
+          baseIntensity = 0.7; // Reduced from 1.0
         }
+
+        // Enhanced modifier detection with better scaling
+        const hasStrongModifiers = textLower.match(/(very|extremely|strongly|deeply|clearly|obviously)/g);
+        const hasModerateModifiers = textLower.match(/(generally|tend to|typically|usually|often)/g);
+        const hasFactualModifiers = textLower.match(/(favor|support|advocate|propose)/g);
+        const hasBalancedLanguage = textLower.match(/(while|however|although|both|either)/g);
+        
+        // Refined modifier adjustments
+        if (hasStrongModifiers) {
+          baseIntensity *= 1.3; // Reduced from 1.5
+        } else if (hasModerateModifiers) {
+          baseIntensity *= 0.4; // Reduced from 0.5
+        } else if (hasFactualModifiers) {
+          baseIntensity *= 0.2; // Reduced from 0.3
+        }
+        
+        // Reduce intensity for balanced language
+        if (hasBalancedLanguage) {
+          baseIntensity *= 0.5;
+        }
+
+        result.intensity += biasType === 'conservative' ? baseIntensity : -baseIntensity;
       }
+      
+      // Enhanced word variation detection with balanced weights
+      words.forEach(word => {
+        const variations = getWordVariations(word);
+        variations.forEach(variation => {
+          if (textLower.includes(variation)) {
+            result.found = true;
+            result.entities.push(word);
+            
+            // Adjusted word intensity scaling
+            let wordIntensity = 0.3; // Reduced base intensity
+            if (['radical', 'extreme', 'socialist', 'fascist'].includes(word)) {
+              wordIntensity = 0.8; // Reduced from 1.5
+            } else if (['generally', 'tend', 'typically'].includes(word)) {
+              wordIntensity = 0.2; // Reduced from 0.3
+            }
+            
+            if (category === 'criticisms') {
+              result.context = 'criticism';
+              result.bias = biasType;
+              result.intensity += (biasType === 'conservative' ? 1.0 : -1.0) * wordIntensity;
+            } else {
+              result.context = 'support';
+              result.bias = biasType;
+              result.intensity += (biasType === 'conservative' ? 0.5 : -0.5) * wordIntensity;
+            }
+          }
+        });
+      });
     });
   };
 
-  // Check all pattern categories
-  ['figures', 'policies', 'phrases', 'criticisms'].forEach(category => {
-    checkPatterns(category, politicalPatterns, 'conservative');
-    checkPatterns(category, politicalPatterns, 'liberal');
+  // Check for balanced political content
+  const hasOpposingViews = text.toLowerCase().match(
+    /(both.*and|while.*however|conservatives.*liberals|republicans.*democrats)/i
+  );
+  
+  if (hasOpposingViews) {
+    result.bias = 'mixed';
+    result.intensity *= 0.5; // Reduce intensity for balanced content
+  }
+
+  // Check patterns with priority ordering
+  ['criticisms', 'negative_descriptors', 'phrases', 'policies'].forEach(category => {
+    if (patterns.conservative[category]) {
+      checkPatterns(category, 'conservative', patterns.conservative[category]);
+    }
+    if (patterns.liberal[category]) {
+      checkPatterns(category, 'liberal', patterns.liberal[category]);
+    }
   });
 
-  // Adjust weight based on context and intensity
-  result.weight = Math.min(100, (result.weight + (result.intensity * 1.5)) / 15);
-  
   return result;
 }
 
 /**
- * Enhanced bias score computation with better averaging
+ * Compute weighted score with better balance
  */
-function computeWeightedBiasScore(sentences) {
-  if (sentences.length === 0) return 0;
-
-  // Track running averages per context
-  const contextScores = {
-    criticism: { total: 0, count: 0 },
-    support: { total: 0, count: 0 },
-    neutral: { total: 0, count: 0 }
-  };
-
-  sentences.forEach(sentence => {
-    let adjustedScore = sentence.sentiment;
-    const context = sentence.bias === 'mixed' ? 'neutral' : 
-                   sentence.entities.some(e => e.category === 'criticisms') ? 'criticism' : 'support';
-
-    // Apply context-specific adjustments
-    if (context === 'criticism') {
-      // Flip the score if criticizing the opposite ideology
-      if (sentence.bias === 'conservative' && sentence.text.toLowerCase().includes('liberal')) {
-        adjustedScore = Math.abs(adjustedScore);
-      } else if (sentence.bias === 'liberal' && sentence.text.toLowerCase().includes('conservative')) {
-        adjustedScore = -Math.abs(adjustedScore);
-      }
-    }
-
-    contextScores[context].total += adjustedScore * sentence.weight;
-    contextScores[context].count += sentence.weight;
-  });
-
-  // Compute weighted average for each context
-  let finalScore = 0;
-  let totalWeight = 0;
-
-  Object.entries(contextScores).forEach(([context, scores]) => {
-    if (scores.count > 0) {
-      const contextWeight = context === 'criticism' ? 2 : 1; // Weight criticism more heavily
-      finalScore += (scores.total / scores.count) * contextWeight;
-      totalWeight += contextWeight;
-    }
-  });
-
-  // Normalize final score
-  const normalizedScore = totalWeight > 0 ? (finalScore / totalWeight) : 0;
+function computeWeightedScore(political, sentiment) {
+  let score = 0;
+  const CRITICISM_MULTIPLIER = 2.5;    // Reduced from 3.0
+  const SENTIMENT_WEIGHT = 0.3;        // Reduced from 0.4
+  const POLITICAL_WEIGHT = 0.5;        // Reduced from 0.6
+  const INTENSITY_BOOST = 1.0;         // Reduced from 1.2
+  const SUBTLETY_FACTOR = 0.3;         // Reduced from 0.4
   
-  // Scale to -100 to 100 range
-  return Math.max(-100, Math.min(100, normalizedScore * 1.5));
+  if (political.found) {
+    let politicalScore = political.intensity * POLITICAL_WEIGHT;
+    
+    // Better handling of mixed/moderate content
+    if (political.bias === 'mixed') {
+      politicalScore *= SUBTLETY_FACTOR;
+    }
+    
+    // Balanced criticism handling
+    if (political.context === 'criticism') {
+      if (political.bias === 'conservative') {
+        politicalScore = Math.abs(politicalScore) * CRITICISM_MULTIPLIER;
+      } else if (political.bias === 'liberal') {
+        politicalScore = -Math.abs(politicalScore) * CRITICISM_MULTIPLIER;
+      }
+    } else {
+      // Reduced scaling for regular political content
+      politicalScore *= political.bias === 'conservative' ? 0.5 : -0.5;
+    }
+    
+    // More nuanced signal boosting
+    if (Math.abs(political.intensity) > 2.0) {
+      politicalScore *= INTENSITY_BOOST;
+    } else if (Math.abs(political.intensity) < 1.0) {
+      politicalScore *= SUBTLETY_FACTOR;
+    }
+    
+    score += politicalScore;
+  }
+  
+  // More balanced sentiment handling
+  const sentimentComponent = sentiment * SENTIMENT_WEIGHT;
+  if (political.found) {
+    if (political.context === 'criticism') {
+      if (political.bias === 'conservative') {
+        score += Math.abs(sentimentComponent) * INTENSITY_BOOST;
+      } else if (political.bias === 'liberal') {
+        score -= Math.abs(sentimentComponent) * INTENSITY_BOOST;
+      }
+    } else {
+      const sentimentScale = political.bias === 'mixed' ? SUBTLETY_FACTOR : 0.5;
+      score += political.bias === 'conservative' ? 
+        sentimentComponent * sentimentScale : 
+        -sentimentComponent * sentimentScale;
+    }
+  } else {
+    score += sentimentComponent * SUBTLETY_FACTOR;
+  }
+  
+  return Math.max(-100, Math.min(100, score));
 }
 
 /**
- * Compute political bias score using NLP and sentiment analysis
- * @param {string} text - The article text to analyze
- * @returns {Object} Bias analysis results
+ * Compute bias score with corrected evidence classification
  */
 function computeBiasScore(text) {
   try {
     const doc = nlp(text);
-    let totalScore = 0;
-    let evidenceCount = 0;
+    let sentences = doc.sentences().out('array');
+    const results = [];
     const flaggedSections = [];
 
-    // Process each sentence for politically charged content
-    doc.sentences().forEach(sentence => {
-      const sentenceText = sentence.text();
-      const lowerText = sentenceText.toLowerCase();
-      let sectionScore = 0;
-      let sectionEvidence = 0;
+    sentences.forEach(sentence => {
+      if (!sentence || typeof sentence !== 'string') return;
 
-      // Check for conservative criticism of liberals
-      if (lowerText.includes('liberal') || lowerText.includes('democrat')) {
-        const negativeWords = ['unhappy', 'angry', 'sad', 'lonely', 'miserable', 'failed', 
-                             'unsatisfied', 'dissatisfied', 'least likely'];
-        negativeWords.forEach(word => {
-          if (lowerText.includes(word)) {
-            sectionScore += 50;
-            sectionEvidence++;
+      // Get political and sentiment analysis
+      const politicalContent = analyzePoliticalContent(sentence, politicalPatterns);
+      const sentimentContext = analyzeSentimentWithContext(sentence, politicalContent);
+      
+      // Enhanced flagging criteria with corrected classification
+      if (politicalContent.found || Math.abs(sentimentContext) > 25) {
+        // Determine criticism context first
+        const isCriticizingLiberals = sentence.toLowerCase().match(
+          /(liberal|democrat|left-wing|progressive).*(unhappy|dissatisfied|radical|extreme)/i
+        );
+        const isCriticizingConservatives = sentence.toLowerCase().match(
+          /(conservative|republican|right-wing).*(undermine|regressive|outdated|backwards)/i
+        );
+
+        // Set correct bias and context based on criticism target
+        if (isCriticizingLiberals) {
+          politicalContent.bias = 'conservative';
+          politicalContent.context = 'criticism';
+        } else if (isCriticizingConservatives) {
+          politicalContent.bias = 'liberal';
+          politicalContent.context = 'criticism';
+        }
+
+        // Compute section score with correct polarity
+        const sectionScore = computeWeightedScore(politicalContent, sentimentContext);
+        
+        // Ensure correct polarity based on bias
+        const finalSectionScore = politicalContent.bias === 'conservative' ? 
+          Math.abs(sectionScore) : -Math.abs(sectionScore);
+
+        // Add to results with corrected classification
+        results.push({
+          text: sentence,
+          political: politicalContent,
+          sentiment: sentimentContext,
+          weight: politicalContent.weight,
+          score: finalSectionScore
+        });
+
+        // Create flagged section with correct evidence
+        flaggedSections.push({
+          text: sentence,
+          score: finalSectionScore,
+          evidence: {
+            political: politicalContent.entities,
+            sentiment: sentimentContext,
+            context: politicalContent.context,
+            bias: politicalContent.bias
           }
         });
-
-        // Check for comparative statements
-        if (lowerText.includes('conservative') && 
-            (lowerText.includes('more') || lowerText.includes('than') || 
-             lowerText.includes('likely') || lowerText.includes('compared'))) {
-          sectionScore += 75;
-          sectionEvidence++;
-        }
       }
-
-      // Check for statistical comparisons
-      if (lowerText.includes('percent') || lowerText.includes('%')) {
-        if (lowerText.includes('conservative') && lowerText.includes('liberal')) {
-          sectionScore += 50;
-          sectionEvidence++;
-        }
-      }
-
-      // If this sentence has significant political content, flag it
-      if (Math.abs(sectionScore) > 25 || sectionEvidence > 0) {
-        flaggedSections.push({
-          text: sentenceText,
-          score: sectionScore,
-          evidence: sectionEvidence
-        });
-      }
-
-      totalScore += sectionScore;
-      evidenceCount += sectionEvidence;
     });
 
-    // Sort flagged sections by absolute score
-    flaggedSections.sort((a, b) => Math.abs(b.score) - Math.abs(a.score));
-
-    // Compute final score
-    const finalScore = evidenceCount > 0 ? 
-      Math.max(-100, Math.min(100, totalScore / Math.max(1, evidenceCount))) : 0;
-
+    // Compute final score with corrected aggregation
+    const finalScore = computeAggregateScore(results);
+    
     return {
       score: finalScore,
-      confidence: Math.min(1, evidenceCount / 5),
-      evidence: evidenceCount,
-      flaggedSections: flaggedSections.slice(0, 5) // Return top 5 most charged sections
+      confidence: computeConfidenceScore(results),
+      evidence: results.length,
+      flaggedSections: flaggedSections.slice(0, 5)
     };
 
   } catch (error) {
@@ -428,6 +599,58 @@ function computeBiasScore(text) {
       flaggedSections: []
     };
   }
+}
+
+/**
+ * Compute aggregate score with corrected polarity
+ */
+function computeAggregateScore(results) {
+  if (results.length === 0) return 0;
+
+  let totalWeight = 0;
+  let weightedSum = 0;
+  const CRITICISM_BOOST = 4.0;
+  const INTENSITY_FACTOR = 3.0;
+
+  results.forEach(result => {
+    let weight = result.weight;
+    let score = result.score;
+    
+    // Enhanced criticism handling with correct polarity
+    if (result.political.context === 'criticism') {
+      weight *= CRITICISM_BOOST;
+      
+      // Ensure correct polarity based on who is being criticized
+      if (result.political.bias === 'conservative') {
+        // Conservative criticizing liberals = positive score
+        score = Math.abs(score);
+      } else if (result.political.bias === 'liberal') {
+        // Liberal criticizing conservatives = negative score
+        score = -Math.abs(score);
+      }
+    } else {
+      // Regular political content maintains its sign
+      score *= result.political.bias === 'conservative' ? 1 : -1;
+    }
+    
+    // Scale by intensity while preserving sign
+    const intensityBoost = 1 + (Math.abs(result.political.intensity) * INTENSITY_FACTOR / 40);
+    score *= intensityBoost;
+    
+    weightedSum += score * weight;
+    totalWeight += weight;
+  });
+
+  // Normalize while preserving polarity
+  let finalScore = totalWeight > 0 ? weightedSum / totalWeight : 0;
+  
+  // Apply non-linear scaling while maintaining sign
+  if (Math.abs(finalScore) > 25) {
+    const direction = finalScore > 0 ? 1 : -1;
+    finalScore = direction * (25 + Math.pow(Math.abs(finalScore) - 25, 1.5));
+  }
+  
+  return Math.max(-100, Math.min(100, finalScore));
 }
 
 /**
@@ -445,67 +668,108 @@ function computeConfidenceScore(sentences) {
   return Math.min(1, quantityFactor * qualityFactor);
 }
 
+/**
+ * Helper function to detect comparative criticism
+ */
+function hasComparativeCriticism(text) {
+  const lowerText = text.toLowerCase();
+  const comparativeTerms = ['compared to', 'more likely', 'less likely', 'than', 'unlike'];
+  const targetTerms = ['liberal', 'conservative', 'democrat', 'republican'];
+  
+  return comparativeTerms.some(comp => 
+    targetTerms.some(target => 
+      lowerText.includes(comp) && lowerText.includes(target)
+    )
+  );
+}
+
+/**
+ * Helper function to detect systematic criticism
+ */
+function hasSystematicCriticism(text) {
+  const lowerText = text.toLowerCase();
+  const systematicTerms = ['systematically', 'consistently', 'repeatedly'];
+  const negativeTerms = ['undermine', 'damage', 'destroy', 'harm', 'block'];
+  
+  return systematicTerms.some(sys => 
+    negativeTerms.some(neg => 
+      lowerText.includes(sys) && lowerText.includes(neg)
+    )
+  );
+}
+
 // Main content extraction functionality for Clearview
 console.log('Clearview content script loaded');
 
-// Export the extract function for use by the extension
-window.clearviewExtractContent = () => {
-  try {
-    // Verify Readability is available
-    if (typeof Readability === 'undefined') {
-      throw new Error('Readability library not found');
-    }
-
-    // Create a clean copy of the document
-    const documentClone = document.cloneNode(true);
-    
-    // Create a new Readability object
-    const reader = new Readability(documentClone);
-    
-    // Parse the content
-    const article = reader.parse();
-    
-    if (!article) {
-      throw new Error('Could not parse article content');
-    }
-
-    // Process the text with Compromise
-    const doc = nlp(article.textContent);
-    
-    // Compute bias score
-    const biasAnalysis = computeBiasScore(article.textContent);
-
-    // Basic NLP analysis
-    const analysis = {
-      sentences: doc.sentences().length,
-      topics: doc.topics().json(),
-      nouns: doc.nouns().json(),
-      bias: biasAnalysis
-    };
-
-    return {
-      success: true,
-      article: {
-        title: article.title,
-        content: article.textContent,
-        excerpt: article.excerpt,
-        byline: article.byline,
-        siteName: article.siteName,
-        analysis: analysis
+// Modify the export section to work in both environments
+if (typeof window !== 'undefined') {
+  // Browser environment
+  window.clearviewExtractContent = () => {
+    try {
+      // Verify Readability is available
+      if (typeof Readability === 'undefined') {
+        throw new Error('Readability library not found');
       }
-    };
 
-  } catch (error) {
-    console.error('Content extraction failed:', error);
-    return {
-      success: false,
-      error: error.message
-    };
-  }
+      // Create a clean copy of the document
+      const documentClone = document.cloneNode(true);
+      
+      // Create a new Readability object
+      const reader = new Readability(documentClone);
+      
+      // Parse the content
+      const article = reader.parse();
+      
+      if (!article) {
+        throw new Error('Could not parse article content');
+      }
+
+      // Process the text with Compromise
+      const doc = nlp(article.textContent);
+      
+      // Compute bias score
+      const biasAnalysis = computeBiasScore(article.textContent);
+
+      // Basic NLP analysis
+      const analysis = {
+        sentences: doc.sentences().length,
+        topics: doc.topics().json(),
+        nouns: doc.nouns().json(),
+        bias: biasAnalysis
+      };
+
+      return {
+        success: true,
+        article: {
+          title: article.title,
+          content: article.textContent,
+          excerpt: article.excerpt,
+          byline: article.byline,
+          siteName: article.siteName,
+          analysis: analysis
+        }
+      };
+
+    } catch (error) {
+      console.error('Content extraction failed:', error);
+      return {
+        success: false,
+        error: error.message
+      };
+    }
+  };
+
+  // Browser-specific logging
+  console.log('Content extractor initialized, function available:', 
+    typeof window.clearviewExtractContent === 'function');
+}
+
+// Export functions for testing (will work in both Node.js and browser)
+export {
+  analyzeSentimentWithContext,
+  analyzePoliticalContent,
+  computeBiasScore
 };
-
-// Verify the function is available
-console.log('Content extractor initialized, function available:', typeof window.clearviewExtractContent === 'function');
 
 // Log successful initialization
 console.log('Content extractor initialized'); 
