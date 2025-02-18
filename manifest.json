@@ -5,7 +5,8 @@
   "description": "Analyze political bias in news articles",
   "permissions": [
     "activeTab",
-    "scripting"
+    "scripting",
+    "storage"
   ],
   "action": {
     "default_popup": "popup/popup.html",

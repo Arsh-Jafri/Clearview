@@ -27,7 +27,8 @@ function updateLoadingState() {
 // Initialize popup
 document.addEventListener('DOMContentLoaded', async function() {
   // Initialize theme first, before any content loads
-  const currentTheme = localStorage.getItem('theme') || 'light';
+  const { theme } = await chrome.storage.local.get('theme');
+  const currentTheme = theme || 'light';
   document.documentElement.setAttribute('data-theme', currentTheme);
   updateThemeIcon(currentTheme);
 
@@ -63,7 +64,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Update theme
     document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    chrome.storage.local.set({ theme: newTheme });
     
     // Update icon
     updateThemeIcon(newTheme);
