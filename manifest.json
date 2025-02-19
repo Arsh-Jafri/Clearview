@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Clearview: AI-Powered Political Bias Analyzer",
-  "version": "1.0",
-  "description": "Analyze political bias in news articles",
+  "version": "1.0.0",
+  "description": "Clearview detects political bias in news, helping you identify left- or right-leaning content with AI-powered sentiment analysis.",
   "permissions": [
     "activeTab",
     "scripting",
@@ -12,14 +12,12 @@
     "default_popup": "popup/popup.html",
     "default_icon": {
       "16": "assets/icon16.png",
-      "32": "assets/icon32.png",
       "48": "assets/icon48.png",
       "128": "assets/icon128.png"
     }
   },
   "icons": {
     "16": "assets/icon16.png",
-    "32": "assets/icon32.png",
     "48": "assets/icon48.png",
     "128": "assets/icon128.png"
   },
