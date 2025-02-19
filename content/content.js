@@ -532,8 +532,9 @@ function computeBiasScore(text) {
     );
 
     sentences.forEach(sentence => {
-      if (!sentence || typeof sentence !== 'string') return;
-
+      // Check if sentence is a quote
+      const isQuote = isQuotedContent(sentence);
+      
       // Get political and sentiment analysis
       const politicalContent = analyzePoliticalContent(sentence, politicalPatterns);
       const sentimentContext = analyzeSentimentWithContext(sentence, politicalContent);
@@ -548,13 +549,21 @@ function computeBiasScore(text) {
           /(conservative|republican|right-wing).*(undermine|regressive|outdated|backwards)/i
         );
 
+        // Adjust scoring for quotes
+        if (isQuote) {
+          // For quotes, we reduce the weight since it's attributed speech
+          politicalContent.weight *= 0.5;
+          // Add quote context to evidence
+          politicalContent.context = 'quote';
+        }
+
         // Set correct bias and context based on criticism target
         if (isCriticizingLiberals) {
           politicalContent.bias = 'conservative';
-          politicalContent.context = 'criticism';
+          politicalContent.context = isQuote ? 'quoted_criticism' : 'criticism';
         } else if (isCriticizingConservatives) {
           politicalContent.bias = 'liberal';
-          politicalContent.context = 'criticism';
+          politicalContent.context = isQuote ? 'quoted_criticism' : 'criticism';
         }
 
         // Compute section score with correct polarity
@@ -564,19 +573,21 @@ function computeBiasScore(text) {
         const finalSectionScore = politicalContent.bias === 'conservative' ? 
           Math.abs(sectionScore) : -Math.abs(sectionScore);
 
-        // Add to results with corrected classification
+        // Add to results with quote information
         results.push({
           text: sentence,
           political: politicalContent,
           sentiment: sentimentContext,
           weight: politicalContent.weight,
-          score: finalSectionScore
+          score: finalSectionScore,
+          isQuote: isQuote
         });
 
-        // Create flagged section with correct evidence
+        // Create flagged section with quote context
         flaggedSections.push({
           text: sentence,
           score: finalSectionScore,
+          isQuote: isQuote,
           evidence: {
             political: politicalContent.entities,
             sentiment: sentimentContext,
@@ -853,4 +864,57 @@ function isValidArticleContent(article) {
 
   // Content should have article structure and no red flags
   return hasArticleStructure && !hasRedFlags;
+}
+
+// Helper function to detect quoted content
+function isQuotedContent(text) {
+  // Check for various quote patterns
+  const quotePatterns = [
+    // Standard quotes
+    /"([^"]+)"/,
+    /'([^']+)'/,
+    /[""]([^""]+)[""]/,
+    /['']([^'']+)['']/,
+    // Said/says patterns
+    /said[,:]?\s*["']([^"']+)["']/i,
+    /says[,:]?\s*["']([^"']+)["']/i,
+    // According to patterns
+    /according to[^"']*["']([^"']+)["']/i,
+    // Statement patterns
+    /stated[,:]?\s*["']([^"']+)["']/i,
+    /statement[,:]?\s*["']([^"']+)["']/i
+  ];
+
+  return quotePatterns.some(pattern => pattern.test(text));
+}
+
+// Update the flagged sections display to show quote context
+function updateFlaggedSections(sections) {
+  // ... existing code ...
+
+  elements.flaggedSections.innerHTML = sortedSections.map((section, index) => {
+    const intensity = Math.abs(section.score);
+    const intensityClass = intensity > 75 ? 'high' : 'moderate';
+    
+    // Add quote indicator if it's a quote
+    const quoteIndicator = section.isQuote ? 
+      '<span class="quote-indicator">(Quoted Content)</span>' : '';
+    
+    let truncatedText = section.text;
+    if (section.text.length > 150) {
+      const lastSpace = section.text.substring(0, 150).lastIndexOf(' ');
+      truncatedText = section.text.substring(0, lastSpace) + '...';
+    }
+    
+    return `
+      <div class="flagged-section ${intensityClass}" data-section-index="${index}">
+        <p>"${truncatedText}"${quoteIndicator}</p>
+        <div class="flagged-section-score">
+          Bias intensity: ${intensity.toFixed(1)} (${section.score > 0 ? 'Conservative' : 'Liberal'})
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // ... rest of the function ...
 } 
