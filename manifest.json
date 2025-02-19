@@ -5,8 +5,7 @@
   "description": "Clearview detects political bias in news, helping you identify left- or right-leaning content with AI-powered sentiment analysis.",
   "permissions": [
     "activeTab",
-    "scripting",
-    "storage"
+    "scripting"
   ],
   "action": {
     "default_popup": "popup/popup.html",

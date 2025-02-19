@@ -714,14 +714,49 @@ if (typeof window !== 'undefined') {
       // Create a clean copy of the document
       const documentClone = document.cloneNode(true);
       
-      // Create a new Readability object
-      const reader = new Readability(documentClone);
+      // Remove unwanted elements before parsing
+      const unwantedSelectors = [
+        // Navigation and menus
+        'nav', 'header', 'footer', '[role="navigation"]',
+        // Sidebars and widgets
+        'aside', '.sidebar', '[role="complementary"]',
+        // Forms and popups
+        'form', '.newsletter-signup', '.subscription-form', '.popup', '.modal',
+        // Paywalls
+        '.paywall', '.subscription-wall', '.premium-content',
+        // Comments and social
+        '#comments', '.comments-section', '.social-share',
+        // Recommendations
+        '.recommended', '.related-articles', '.more-stories',
+        // Advertisements
+        '.advertisement', '.ad-container', '[class*="ad-"]',
+        // Generic utility classes
+        '.utility-bar', '.toolbar', '.menu'
+      ];
+
+      unwantedSelectors.forEach(selector => {
+        const elements = documentClone.querySelectorAll(selector);
+        elements.forEach(element => element.remove());
+      });
+      
+      // Create a new Readability object with the cleaned document
+      const reader = new Readability(documentClone, {
+        // Readability options to better identify content
+        charThreshold: 100,
+        classesToPreserve: ['article-content', 'content-body', 'story-body'],
+        keepClasses: false
+      });
       
       // Parse the content
       const article = reader.parse();
       
       if (!article) {
         throw new Error('Could not parse article content');
+      }
+
+      // Additional validation of content
+      if (!isValidArticleContent(article)) {
+        throw new Error('Content appears to be non-article');
       }
 
       // Process the text with Compromise
@@ -772,4 +807,43 @@ export {
 };
 
 // Log successful initialization
-console.log('Content extractor initialized'); 
+console.log('Content extractor initialized');
+
+// Helper function to validate article content
+function isValidArticleContent(article) {
+  // Check if content exists and has minimum length
+  if (!article.content || article.content.length < 300) {
+    return false;
+  }
+
+  // Check for required article properties
+  if (!article.title || !article.siteName) {
+    return false;
+  }
+
+  // Check content for common article indicators
+  const hasArticleStructure = (
+    article.content.includes('<p>') || 
+    article.content.includes('<article') ||
+    article.byline
+  );
+
+  // Check for red flags that indicate non-article content
+  const redFlags = [
+    'subscribe now',
+    'sign up for our newsletter',
+    'create an account',
+    'login to continue',
+    'subscribe to continue reading',
+    'premium content',
+    'menu',
+    'navigation'
+  ];
+
+  const hasRedFlags = redFlags.some(flag => 
+    article.content.toLowerCase().includes(flag)
+  );
+
+  // Content should have article structure and no red flags
+  return hasArticleStructure && !hasRedFlags;
+} 

@@ -368,14 +368,18 @@ function updateFlaggedSections(sections) {
     return;
   }
 
-  elements.flaggedSections.innerHTML = sections.map((section, index) => {
+  // Sort sections by absolute score value (highest to lowest)
+  const sortedSections = [...sections].sort((a, b) => 
+    Math.abs(b.score) - Math.abs(a.score)
+  );
+
+  elements.flaggedSections.innerHTML = sortedSections.map((section, index) => {
     const intensity = Math.abs(section.score);
     const intensityClass = intensity > 75 ? 'high' : 'moderate';
     
     // Truncate text at word boundary
     let truncatedText = section.text;
     if (section.text.length > 150) {
-      // Find the last space before 150 characters
       const lastSpace = section.text.substring(0, 150).lastIndexOf(' ');
       truncatedText = section.text.substring(0, lastSpace) + '...';
     }
