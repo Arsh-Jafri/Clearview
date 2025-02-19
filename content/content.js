@@ -524,6 +524,13 @@ function computeBiasScore(text) {
     const results = [];
     const flaggedSections = [];
 
+    // Filter sentences by minimum length (25 characters)
+    sentences = sentences.filter(sentence => 
+      sentence && 
+      typeof sentence === 'string' && 
+      sentence.trim().length >= 25
+    );
+
     sentences.forEach(sentence => {
       if (!sentence || typeof sentence !== 'string') return;
 
