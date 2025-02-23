@@ -46,7 +46,7 @@ Clearview is designed for:
 ## Installation
 
 ### Chrome Web Store
-1. Visit the [Chrome Web Store](https://chrome.google.com/webstore/detail/clearview/YOUR_EXTENSION_ID)
+1. Visit the [Chrome Web Store](https://chromewebstore.google.com/detail/clearview-ai-powered-poli/eaaojgnnhjbcmggeepkpkemopfnjcpnb?hl=en&authuser=0)
 2. Click "Add to Chrome"
 3. Confirm the installation
 
