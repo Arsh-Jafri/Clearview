@@ -11,6 +11,8 @@
     <img src="assets/DownloadNow.png" alt="Download Now" style="width: 150px;" margin: 100px 0;>
   </a>
 </div>
+<div>
+</div>
 
 
 Clearview is a Chrome extension that empowers readers to understand the political bias in news articles through advanced language analysis. By providing objective metrics and highlighting potentially biased content, Clearview helps users make more informed decisions about their news consumption.
