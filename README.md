@@ -8,7 +8,7 @@
 
 <div align="left">
   <a href="https://chromewebstore.google.com/detail/clearview-ai-powered-poli/eaaojgnnhjbcmggeepkpkemopfnjcpnb?hl=en&authuser=0">
-    <img src="assets/DownloadNow.png" alt="Download Now" style="width: 175px;" margin: 20px 20px;>
+    <img src="assets/DownloadNow.png" alt="Download Now" style="width: 150px;" margin: 20px 20px;>
   </a>
 </div>
 
