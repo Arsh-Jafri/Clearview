@@ -5,7 +5,10 @@
 # Clearview - News and Article Bias Analyzer
 
 ## Available Now
-[![Available in the Chrome Web Store](https://img.shields.io/chrome-web-store/v/YOUR_EXTENSION_ID.svg)](https://chrome.google.com/webstore/detail/clearview/YOUR_EXTENSION_ID)
+[![Available in the Chrome Web Store](https://img.shields.io/chrome-web-store/v/YOUR_EXTENSION_ID.svg)](https://chromewebstore.google.com/detail/clearview-ai-powered-poli/eaaojgnnhjbcmggeepkpkemopfnjcpnb?hl=en&authuser=0)
+
+Clearview is a Chrome extension that empowers readers to understand the political bias in news articles through advanced language analysis. By providing objective metrics and highlighting potentially biased content, Clearview helps users make more informed decisions about their news consumption.
+
 
 Clearview is a Chrome extension that empowers readers to understand the political bias in news articles through advanced language analysis. By providing objective metrics and highlighting potentially biased content, Clearview helps users make more informed decisions about their news consumption.
 
